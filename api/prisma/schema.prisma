@@ -1,0 +1,25 @@
+// Prisma schema
+
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Job {
+  id         String   @id @default(uuid())
+  status     String
+  inputUrl   String
+  outputSpec Json
+  progress   Float    @default(0)
+  retries    Int      @default(0)
+  error      String?
+  workerId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

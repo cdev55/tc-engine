@@ -1,0 +1,25 @@
+version: '3'
+services:
+  db:
+    image: postgres:16
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dbpass
+      POSTGRES_DB: tcDB
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - ./data/redis:/data
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080

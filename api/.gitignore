@@ -1,0 +1,30 @@
+# OS files
+Thumbs.db
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Prisma
+# Note: Keep migrations, but ignore generated client if needed
+# Uncomment if you want to ignore generated Prisma client
+# node_modules/.prisma/
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+node_modules
+# Docker
+docker-compose.override.yml
+
+# Database data (PostgreSQL & Redis)
+data/
