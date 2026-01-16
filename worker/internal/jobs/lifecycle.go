@@ -43,7 +43,9 @@ func ProcessJob(
 	database.MarkFailed(ctx, jobID, err.Error())
 	q.ReleaseJob(ctx, jobID)
 
-	if retries >= MaxRetries {
+	if retries < MaxRetries {
+		q.RequeueJob(ctx, jobID)
+	}else{
 		log.Println("Job moved to DEAD:", jobID)
 	}
 }

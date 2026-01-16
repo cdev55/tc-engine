@@ -46,3 +46,8 @@ func (q *RedisQueue) ReleaseJob(ctx context.Context, jobID string) error {
 func (q *RedisQueue) IncrementRetry(ctx context.Context, jobID string) (int64, error) {
 	return q.Client.Incr(ctx, "transcode:retry:"+jobID).Result()
 }
+
+func (q *RedisQueue) RequeueJob(ctx context.Context, jobID string) error {
+	return q.Client.LPush(ctx, "transcode:queue", jobID).Err()
+}
+
