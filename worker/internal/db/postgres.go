@@ -1,4 +1,3 @@
-
 package db
 
 import (
@@ -24,8 +23,8 @@ func (d *DB) UpdateStatus(
 	jobID, status, workerID string,
 ) error {
 	_, err := d.Pool.Exec(ctx, `
-		UPDATE jobs
-		SET status=$1, worker_id=$2, updated_at=now()
+		UPDATE "Job"
+		SET status=$1, "workerId"=$2, "updatedAt"=now()
 		WHERE id=$3 AND status IN ('QUEUED','FAILED')
 	`, status, workerID, jobID)
 
@@ -34,8 +33,8 @@ func (d *DB) UpdateStatus(
 
 func (d *DB) MarkCompleted(ctx context.Context, jobID string) error {
 	_, err := d.Pool.Exec(ctx, `
-		UPDATE jobs
-		SET status='COMPLETED', progress=100, updated_at=now()
+		UPDATE "Job"
+		SET status='COMPLETED', progress=100, "updatedAt"=now()
 		WHERE id=$1
 	`, jobID)
 	return err
@@ -43,8 +42,8 @@ func (d *DB) MarkCompleted(ctx context.Context, jobID string) error {
 
 func (d *DB) MarkFailed(ctx context.Context, jobID, errMsg string) error {
 	_, err := d.Pool.Exec(ctx, `
-		UPDATE jobs
-		SET status='FAILED', error=$2, updated_at=now()
+		UPDATE "Job"
+		SET status='FAILED', error=$2, "updatedAt"=now()
 		WHERE id=$1
 	`, jobID, errMsg)
 	return err

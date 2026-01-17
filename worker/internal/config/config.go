@@ -1,14 +1,24 @@
 package config
 
-import "os"
+import (
+	"os"
+
+	"github.com/joho/godotenv"
+)
 
 type Config struct {
-	RedisURL   string
+	RedisURL    string
 	DatabaseURL string
-	WorkerID   string
+	WorkerID    string
 }
 
 func Load() Config {
+	_ = godotenv.Load()
+
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+		println("Warning: error loading .env file:", err.Error())
+	}
+
 	return Config{
 		RedisURL:    os.Getenv("REDIS_URL"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
