@@ -26,7 +26,7 @@ func Execute(ctx context.Context, jobID string) error {
 	// 2. Download input (TEMP: dummy copy)
 	// For now, assume input already exists or is local
 	// Later: download from S3 / HTTP
-	jobInputURL := "https://file-examples.com/storage/fe0665c50e696f11e9d7add/2017/04/file_example_MP4_640_3MG.mp4"
+	jobInputURL := "https://cdn-dqs.mogiio.com/dev/mogiDocs/20a01a2026a12a31a43fileexampleMP448015MG.mp4"
 
 	resolvers := []input.Resolver{
 		&input.HTTPResolver{},
@@ -41,20 +41,24 @@ func Execute(ctx context.Context, jobID string) error {
 	for _, r := range resolvers {
 		if r.CanHandle(jobInputURL) {
 			if err := r.Download(ctx, jobInputURL, inputPath); err != nil {
+				fmt.Println("Error while downloading the url",err)
 				return err
 			}
 			resolved = true
 			break
 		}
 	}
+	fmt.Println("kkkkk",resolved)
 	
 	if !resolved {
 		return fmt.Errorf("no resolver for input: %s", jobInputURL)
 	}
 	
-	if err := os.WriteFile(inputPath, []byte{}, 0644); err != nil {
-		return err
-	}
+	// if err := os.WriteFile(inputPath, []byte{}, 0644); err != nil {
+	// 	fmt.Println("Error while writing")
+	// 	return err
+	// }
+	fmt.Println("jjjjjjj")
 
 	// 3. Build FFmpeg command
 	cmd := exec.CommandContext(
@@ -73,12 +77,14 @@ func Execute(ctx context.Context, jobID string) error {
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
+		fmt.Println("Error while stdout command:::",err)
 		return err
 	}
 	cmd.Stderr = cmd.Stdout
 
 	// 4. Start FFmpeg
 	if err := cmd.Start(); err != nil {
+		fmt.Println("Error while cmd start::::::::::::",err)
 		return err
 	}
 
