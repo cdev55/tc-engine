@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 )
+import "transcoding-worker/internal/input"
+
 
 func Execute(ctx context.Context, jobID string) error {
 	workDir := filepath.Join("/tmp/transcode", jobID)
@@ -24,6 +26,32 @@ func Execute(ctx context.Context, jobID string) error {
 	// 2. Download input (TEMP: dummy copy)
 	// For now, assume input already exists or is local
 	// Later: download from S3 / HTTP
+	jobInputURL := "https://file-examples.com/storage/fe0665c50e696f11e9d7add/2017/04/file_example_MP4_640_3MG.mp4"
+
+	resolvers := []input.Resolver{
+		&input.HTTPResolver{},
+	}
+	
+	s3Resolver, err := input.NewS3Resolver(ctx)
+	if err == nil {
+		resolvers = append(resolvers, s3Resolver)
+	}
+	
+	var resolved bool
+	for _, r := range resolvers {
+		if r.CanHandle(jobInputURL) {
+			if err := r.Download(ctx, jobInputURL, inputPath); err != nil {
+				return err
+			}
+			resolved = true
+			break
+		}
+	}
+	
+	if !resolved {
+		return fmt.Errorf("no resolver for input: %s", jobInputURL)
+	}
+	
 	if err := os.WriteFile(inputPath, []byte{}, 0644); err != nil {
 		return err
 	}

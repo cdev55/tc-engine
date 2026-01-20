@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"io"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
