@@ -8,9 +8,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"transcoding-worker/internal/input"
+	"transcoding-worker/internal/output"
 )
-import "transcoding-worker/internal/input"
-
 
 func Execute(ctx context.Context, jobID string) error {
 	workDir := filepath.Join("/tmp/transcode", jobID)
@@ -31,34 +31,32 @@ func Execute(ctx context.Context, jobID string) error {
 	resolvers := []input.Resolver{
 		&input.HTTPResolver{},
 	}
-	
+
 	s3Resolver, err := input.NewS3Resolver(ctx)
 	if err == nil {
 		resolvers = append(resolvers, s3Resolver)
 	}
-	
+
 	var resolved bool
 	for _, r := range resolvers {
 		if r.CanHandle(jobInputURL) {
 			if err := r.Download(ctx, jobInputURL, inputPath); err != nil {
-				fmt.Println("Error while downloading the url",err)
+				fmt.Println("Error while downloading the url", err)
 				return err
 			}
 			resolved = true
 			break
 		}
 	}
-	fmt.Println("kkkkk",resolved)
-	
+
 	if !resolved {
 		return fmt.Errorf("no resolver for input: %s", jobInputURL)
 	}
-	
+
 	// if err := os.WriteFile(inputPath, []byte{}, 0644); err != nil {
 	// 	fmt.Println("Error while writing")
 	// 	return err
 	// }
-	fmt.Println("jjjjjjj")
 
 	// 3. Build FFmpeg command
 	cmd := exec.CommandContext(
@@ -77,14 +75,14 @@ func Execute(ctx context.Context, jobID string) error {
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Println("Error while stdout command:::",err)
+		fmt.Println("Error while stdout command:::", err)
 		return err
 	}
 	cmd.Stderr = cmd.Stdout
 
 	// 4. Start FFmpeg
 	if err := cmd.Start(); err != nil {
-		fmt.Println("Error while cmd start::::::::::::",err)
+		fmt.Println("Error while cmd start::::::::::::", err)
 		return err
 	}
 
@@ -106,6 +104,23 @@ func Execute(ctx context.Context, jobID string) error {
 	// 7. Verify output exists
 	if _, err := os.Stat(outputPath); err != nil {
 		return fmt.Errorf("output not created")
+	}
+
+	bucket := os.Getenv("OUTPUT_S3_BUCKET")
+
+	if bucket == "" {
+		return fmt.Errorf("OUTPUT_S3_BUCKET not set")
+	}
+
+	uploader, err := output.NewS3Uploader(ctx, bucket)
+	if err != nil {
+		return err
+	}
+
+	s3Key := fmt.Sprintf("outputs/%s/output.mp4", jobID)
+
+	if err := uploader.UploadFile(ctx, outputPath, s3Key); err != nil {
+		return err
 	}
 
 	return nil

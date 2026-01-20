@@ -7,9 +7,12 @@ import (
 )
 
 type Config struct {
-	RedisURL    string
-	DatabaseURL string
-	WorkerID    string
+	RedisURL           string
+	DatabaseURL        string
+	WorkerID           string
+	AwsAccessKeysId    string
+	AwsSecretAccessKey string
+	AwsRegion          string
 }
 
 func Load() Config {
@@ -20,8 +23,11 @@ func Load() Config {
 	}
 
 	return Config{
-		RedisURL:    os.Getenv("REDIS_URL"),
-		DatabaseURL: os.Getenv("DATABASE_URL"),
-		WorkerID:    os.Getenv("WORKER_ID"),
+		RedisURL:           os.Getenv("REDIS_URL"),
+		DatabaseURL:        os.Getenv("DATABASE_URL"),
+		WorkerID:           os.Getenv("WORKER_ID"),
+		AwsAccessKeysId:    os.Getenv("AWS_ACCESS_KEYS_ID"),
+		AwsSecretAccessKey: os.Getenv("AWS_SECRET_ACCESS_KEY"),
+		AwsRegion:          os.Getenv("AWS_REGION"),
 	}
 }
