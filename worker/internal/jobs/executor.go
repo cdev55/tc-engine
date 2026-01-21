@@ -16,6 +16,11 @@ func Execute(ctx context.Context, jobID string) error {
 	workDir := filepath.Join("/tmp/transcode", jobID)
 	inputPath := filepath.Join(workDir, "input.mp4")
 	outputPath := filepath.Join(workDir, "output.mp4")
+	hlsDir := filepath.Join(workDir, "hls")
+
+	if err := os.MkdirAll(hlsDir, 0755); err != nil {
+		return err
+	}
 
 	// 1. Create work dir
 	if err := os.MkdirAll(workDir, 0755); err != nil {
@@ -120,6 +125,52 @@ func Execute(ctx context.Context, jobID string) error {
 	s3Key := fmt.Sprintf("outputs/%s/output.mp4", jobID)
 
 	if err := uploader.UploadFile(ctx, outputPath, s3Key); err != nil {
+		return err
+	}
+
+	hlsPlaylist := filepath.Join(hlsDir, "720p.m3u8")
+
+	hlsCmd := exec.CommandContext(
+		ctx,
+		"ffmpeg",
+		"-y",
+		"-i", inputPath,
+		"-c:v", "libx264",
+		"-preset", "fast",
+		"-crf", "23",
+		"-c:a", "aac",
+		"-f", "hls",
+		"-hls_time", "6",
+		"-hls_playlist_type", "vod",
+		"-hls_segment_type", "fmp4",
+		"-hls_fmp4_init_filename", "init.mp4",
+		"-hls_segment_filename", "segment_%05d.m4s",
+		hlsPlaylist,
+	)
+
+	hlsCmd.Dir = hlsDir
+
+	if err := hlsCmd.Run(); err != nil {
+		return fmt.Errorf("hls packaging failed: %w", err)
+	}
+
+	masterPlaylist := `#EXTM3U
+	#EXT-X-VERSION:7
+	#EXT-X-STREAM-INF:BANDWIDTH=3000000,RESOLUTION=1280x720
+	720p.m3u8
+	`
+
+	if err := os.WriteFile(
+		filepath.Join(hlsDir, "master.m3u8"),
+		[]byte(masterPlaylist),
+		0644,
+	); err != nil {
+		return err
+	}
+
+	hlsS3Prefix := fmt.Sprintf("outputs/%s/hls", jobID)
+
+	if err := uploader.UploadDir(ctx, hlsDir, hlsS3Prefix); err != nil {
 		return err
 	}
 
