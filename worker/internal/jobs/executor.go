@@ -1,8 +1,12 @@
 package jobs
 
-import "context"
+import (
+	"context"
+	"transcoding-worker/internal/db"
+	"transcoding-worker/internal/queue"
+)
 
-func Execute(ctx context.Context, jobID string) error {
+func Execute(ctx context.Context, jobID string, q *queue.RedisQueue, database *db.DB) error {
 	env, err := setupWorkspace(jobID)
 	if err != nil {
 		return err
@@ -13,7 +17,7 @@ func Execute(ctx context.Context, jobID string) error {
 		return err
 	}
 
-	if err := transcodeMP4(ctx, env); err != nil {
+	if err := transcodeMP4(ctx, env, q, database); err != nil {
 		return err
 	}
 

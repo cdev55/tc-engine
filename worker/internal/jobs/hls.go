@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"bufio"
 )
 
 func packageHLS(ctx context.Context, env *ExecEnv) error {
@@ -47,14 +48,48 @@ func packageHLS(ctx context.Context, env *ExecEnv) error {
 		"-var_stream_map", buildVarStreamMap(),
 		"-master_pl_name", "master.m3u8",
 		"-hls_segment_filename", "%v_%05d.m4s",
+		"-progress", "pipe:1",
 		"%v.m3u8",
 	)
 
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
+	
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		fmt.Println("Error while stdout command:::", err)
+		return err
+	}
+
 	cmd.Dir = env.HLSDir
 
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("hls ladder ffmpeg failed: %w", err)
+	// if err := cmd.Run(); err != nil {
+	// 	return fmt.Errorf("hls ladder ffmpeg failed: %w", err)
+	// }
+
+	// 4. Start FFmpeg
+	if err := cmd.Start(); err != nil {
+		fmt.Println("Error while cmd start::::::::::::", err)
+		return err
+	}
+
+	// 5. Parse progress
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "hls_out_time_ms=") {
+			// Later: convert to % and publish to Redis
+			fmt.Println("FFmpeg:", line)
+		}
+	}
+
+	// 6. Wait for completion
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("ffmpeg failed: %w", err)
+	}
+
+	// 7. Verify output exists
+	if _, err := os.Stat(env.MP4Path); err != nil {
+		return fmt.Errorf("output not created")
 	}
 
 	return writeMasterPlaylist(env.HLSDir)

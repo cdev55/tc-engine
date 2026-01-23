@@ -48,3 +48,17 @@ func (d *DB) MarkFailed(ctx context.Context, jobID, errMsg string) error {
 	`, jobID, errMsg)
 	return err
 }
+
+func (d *DB) UpdateProgress(
+	ctx context.Context,
+	jobID string,
+	progress float64,
+) error {
+	_, err := d.Pool.Exec(ctx, `
+		UPDATE "Job"
+		SET progress=$2, "updatedAt"=now()
+		WHERE id=$1
+	`, jobID, progress)
+
+	return err
+}

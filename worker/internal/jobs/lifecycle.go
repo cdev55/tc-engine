@@ -35,7 +35,7 @@ func ProcessJob(
 		return
 	}
 
-	err = Execute(ctx, jobID)
+	err = Execute(ctx, jobID, q, database)
 
 	if err == nil {
 		if err := database.MarkCompleted(ctx, jobID); err != nil {
