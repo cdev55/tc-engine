@@ -25,13 +25,16 @@ func Execute(ctx context.Context, jobID string, q *queue.RedisQueue, database *d
 	// 	return err
 	// }
 
-	if err := packageHLS(ctx, env); err != nil {
+	if err := packageHLS(ctx, env, q, database); err != nil {
 		return err
 	}
 
 	if err := uploadHLS(ctx, env); err != nil {
 		return err
 	}
+
+	_ = q.PublishProgress(ctx, env.JobID, 100)
+	_ = database.UpdateProgress(ctx, env.JobID, 100)
 
 	return nil
 }

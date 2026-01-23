@@ -1,16 +1,19 @@
 package jobs
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
-	"bufio"
+	"transcoding-worker/internal/db"
+	"transcoding-worker/internal/queue"
 )
 
-func packageHLS(ctx context.Context, env *ExecEnv) error {
+func packageHLS(ctx context.Context, env *ExecEnv, queue *queue.RedisQueue, database *db.DB) error {
 	args := []string{
 		"-y",
 		"-i", env.InputPath,
@@ -52,13 +55,18 @@ func packageHLS(ctx context.Context, env *ExecEnv) error {
 		"%v.m3u8",
 	)
 
-	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
-	
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		fmt.Println("Error while stdout command:::", err)
+	durationSec, err := getDurationSeconds(ctx, env.InputPath)
+	if err != nil || durationSec <= 0 {
 		return err
 	}
+
+	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
+
+	// stdout, err := cmd.StdoutPipe()
+	// if err != nil {
+	// 	fmt.Println("Error while stdout command:::", err)
+	// 	return err
+	// }
 
 	cmd.Dir = env.HLSDir
 
@@ -66,29 +74,63 @@ func packageHLS(ctx context.Context, env *ExecEnv) error {
 	// 	return fmt.Errorf("hls ladder ffmpeg failed: %w", err)
 	// }
 
-	// 4. Start FFmpeg
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		fmt.Println("Error while stdout command:::", err)
+		return err
+	}
+	cmd.Stderr = cmd.Stdout
+
 	if err := cmd.Start(); err != nil {
 		fmt.Println("Error while cmd start::::::::::::", err)
 		return err
 	}
 
-	// 5. Parse progress
 	scanner := bufio.NewScanner(stdout)
+	lastSaved := 60.0 // start of HLS phase
+
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.HasPrefix(line, "hls_out_time_ms=") {
-			// Later: convert to % and publish to Redis
-			fmt.Println("FFmpeg:", line)
+
+		if strings.HasPrefix(line, "out_time_ms=") {
+			msStr := strings.TrimPrefix(line, "out_time_ms=")
+			fmt.Println("FFmpeg HLS:", line)
+
+			ms, _ := strconv.ParseFloat(msStr, 64)
+
+			currentSec := ms / 1_000_000
+			rawPercent := (currentSec / durationSec) * 100
+			if rawPercent > 100 {
+				rawPercent = 100
+			}
+			if rawPercent < 0 {
+				rawPercent = 0
+			}
+
+			// 🔥 Map 0–100
+			mapped := rawPercent
+
+			if mapped > 100 {
+				mapped = 100
+			}
+
+			// Redis: every update
+			_ = queue.PublishProgress(ctx, env.JobID, mapped)
+
+			// DB: every 1%
+			if mapped-lastSaved >= 10 {
+				lastSaved = mapped
+				_ = database.UpdateProgress(ctx, env.JobID, mapped)
+			}
 		}
 	}
 
-	// 6. Wait for completion
 	if err := cmd.Wait(); err != nil {
-		return fmt.Errorf("ffmpeg failed: %w", err)
+		return fmt.Errorf("hls ffmpeg failed: %w", err)
 	}
 
 	// 7. Verify output exists
-	if _, err := os.Stat(env.MP4Path); err != nil {
+	if _, err := os.Stat(env.HLSDir); err != nil {
 		return fmt.Errorf("output not created")
 	}
 
