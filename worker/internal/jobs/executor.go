@@ -17,13 +17,13 @@ func Execute(ctx context.Context, jobID string, q *queue.RedisQueue, database *d
 		return err
 	}
 
-	if err := transcodeMP4(ctx, env, q, database); err != nil {
-		return err
-	}
+	// if err := transcodeMP4(ctx, env, q, database); err != nil {
+	// 	return err
+	// }
 
-	if err := uploadMP4(ctx, env); err != nil {
-		return err
-	}
+	// if err := uploadMP4(ctx, env); err != nil {
+	// 	return err
+	// }
 
 	if err := packageHLS(ctx, env); err != nil {
 		return err
