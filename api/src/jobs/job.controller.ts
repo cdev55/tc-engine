@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { createJobSchema } from "./job.validation";
-import { createJob, getJob } from "./job.service";
+import { createJob, getJob, retryTranscodeJob } from "./job.service";
 
 export async function createJobHandler(req: Request, res: Response) {
     const parsed = createJobSchema.safeParse(req.body);
@@ -19,6 +19,17 @@ export async function createJobHandler(req: Request, res: Response) {
 export async function getJobHandler(req: Request, res: Response) {
     const jobId = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
     const job = await getJob(jobId);
+    if (!job) {
+        return res.status(404).json({ error: "Job not found" });
+    }
+
+    res.json(job);
+}
+
+
+export async function retryTranscodeJobHandler(req: Request, res: Response) {
+    const jobId = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
+    const job = await retryTranscodeJob(jobId);
     if (!job) {
         return res.status(404).json({ error: "Job not found" });
     }

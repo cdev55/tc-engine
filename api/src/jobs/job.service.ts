@@ -23,3 +23,13 @@ export async function createJob(inputUrl: string, outputSpec: any) {
 export async function getJob(jobId: string) {
   return prisma.job.findUnique({ where: { id: jobId } });
 }
+
+export async function retryTranscodeJob(jobId: string) {
+  const updatedJob = await prisma.job.update({
+    where: { id: jobId },
+    data: { status: "QUEUED", retries: { increment: 1 } },
+  });
+
+  await redis.lpush("transcode:queue", updatedJob.id);
+  return updatedJob;
+}
