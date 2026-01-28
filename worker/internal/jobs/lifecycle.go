@@ -75,4 +75,4 @@ func ProcessJob(
 		log.Println("Job moved to DEAD:", jobID)
 	}
 }
-//curl -X POST http://localhost:3000/jobs/03c08ef6-7b75-4638-becc-c849e85c1aae/cancel
+//curl -X POST http://localhost:3000/jobs/24b5db98-ab3c-4738-a263-db1cf71a33e9/cancel

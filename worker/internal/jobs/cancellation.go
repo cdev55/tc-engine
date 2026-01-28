@@ -32,4 +32,5 @@ func HandleCancellation(
 ) {
 	// use background ctx to guarantee DB write
 	_ = database.MarkCancelled(context.Background(), jobID)
+	log.Println("Job cancelled:", jobID)
 }
