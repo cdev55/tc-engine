@@ -67,7 +67,7 @@ func packageHLS(ctx context.Context, env *ExecEnv, queue *queue.RedisQueue, data
 	// 	fmt.Println("Error while stdout command:::", err)
 	// 	return err
 	// }
-
+	
 	cmd.Dir = env.HLSDir
 
 	// if err := cmd.Run(); err != nil {
@@ -107,7 +107,7 @@ func packageHLS(ctx context.Context, env *ExecEnv, queue *queue.RedisQueue, data
 				rawPercent = 0
 			}
 
-			// 🔥 Map 0–100
+			// Map 0–100
 			mapped := rawPercent
 
 			if mapped > 100 {
@@ -126,6 +126,9 @@ func packageHLS(ctx context.Context, env *ExecEnv, queue *queue.RedisQueue, data
 	}
 
 	if err := cmd.Wait(); err != nil {
+		if IsCancellationError(ctx.Err()) {
+			return ctx.Err()
+		}
 		return fmt.Errorf("hls ffmpeg failed: %w", err)
 	}
 

@@ -33,3 +33,13 @@ export async function retryTranscodeJob(jobId: string) {
   await redis.lpush("transcode:queue", updatedJob.id);
   return updatedJob;
 }
+
+export async function cancelTranscodeJob(jobId: string) {
+  const updatedJob = await prisma.job.update({
+    where: { id: jobId },
+    data: { status: "CANCELLED_REQUESTED" },
+  });
+
+  await redis.publish("transcode:cancel", jobId);
+  return updatedJob;
+}

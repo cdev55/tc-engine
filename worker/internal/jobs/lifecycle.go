@@ -18,6 +18,12 @@ func ProcessJob(
 	database *db.DB,
 ) {
 
+	if shouldCancelBeforeStart(ctx, jobID, database) {
+		HandleCancellation(ctx, jobID, database)
+		return
+	}
+
+
 	locked, err := q.AcquireLock(ctx, jobID, workerID)
 	if err != nil {
 		log.Printf("Failed to acquire lock for job %s: %v", jobID, err)
@@ -38,6 +44,12 @@ func ProcessJob(
 	err = Execute(ctx, jobID, q, database)
 
 	if err == nil {
+
+		if IsCancellationError(err) {
+			HandleCancellation(ctx, jobID, database)
+			return
+		}
+
 		if err := database.MarkCompleted(ctx, jobID); err != nil {
 			log.Printf("Failed to mark job %s as completed: %v", jobID, err)
 		}

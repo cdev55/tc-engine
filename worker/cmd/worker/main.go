@@ -16,6 +16,9 @@ func main() {
 
 	q := queue.NewRedisQueue(cfg.RedisURL)
 
+	var runningJobs sync.Map{}
+	queue.StartCancelListener(ctx, q, &runningJobs)
+
 	database, err := db.Connect(ctx, cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal(err)
@@ -29,13 +32,19 @@ func main() {
 			log.Println("Queue error:", err)
 			continue
 		}
+		
+		jobCtx, cancel := context.WithCancel(context.Background())
+		runningJobs.Store(jobID, cancel)
 
-		go jobs.ProcessJob(
-			ctx,
-			jobID,
-			cfg.WorkerID,
-			q,
-			database,
-		)
+		go func() {
+			jobs.ProcessJob(
+				ctx,
+				jobID,
+				cfg.WorkerID,
+				q,
+				database,
+			)
+			runningJobs.Delete(jobID)
+		}()
 	}
 }

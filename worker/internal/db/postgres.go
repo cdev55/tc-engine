@@ -62,3 +62,22 @@ func (d *DB) UpdateProgress(
 
 	return err
 }
+
+func (d *DB) GetJobStatus(ctx context.Context, jobID string) (string, error) {
+	var status string
+	err := d.Pool.QueryRow(ctx, `
+		SELECT status FROM "Job" WHERE id=$1
+	`, jobID).Scan(&status)
+	return status, err
+}
+
+func (d *DB) MarkCancelled(ctx context.Context, jobID string) error {
+	_, err := d.Pool.Exec(ctx, `
+		UPDATE "Job"
+		SET status='CANCELLED',
+		    cancelled_at=now(),
+		    "updatedAt"=now()
+		WHERE id=$1
+	`)
+	return err
+}

@@ -7,3 +7,4 @@ app.use(express.json());
 app.post("/jobs", createJobHandler);
 app.get("/jobs/:id", getJobHandler);
 app.put("/jobs/:id", retryTranscodeJobHandler);
+app.post("/jobs/:id/cancel", cancelTranscodeJobHandler);
