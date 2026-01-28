@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"log"
+	"sync"
 )
 
 func StartCancelListener(

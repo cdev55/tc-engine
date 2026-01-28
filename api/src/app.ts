@@ -1,5 +1,5 @@
 import express from "express";
-import { createJobHandler, getJobHandler, retryTranscodeJobHandler } from "./jobs/job.controller";
+import { cancelTranscodeJobHandler, createJobHandler, getJobHandler, retryTranscodeJobHandler } from "./jobs/job.controller";
 
 export const app = express();
 app.use(express.json());

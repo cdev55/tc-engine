@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"log"
-
+	"sync"
 	"transcoding-worker/internal/config"
 	"transcoding-worker/internal/db"
 	"transcoding-worker/internal/jobs"
@@ -16,7 +16,7 @@ func main() {
 
 	q := queue.NewRedisQueue(cfg.RedisURL)
 
-	var runningJobs sync.Map{}
+	var runningJobs sync.Map
 	queue.StartCancelListener(ctx, q, &runningJobs)
 
 	database, err := db.Connect(ctx, cfg.DatabaseURL)
@@ -38,7 +38,7 @@ func main() {
 
 		go func() {
 			jobs.ProcessJob(
-				ctx,
+				jobCtx,
 				jobID,
 				cfg.WorkerID,
 				q,
@@ -48,3 +48,5 @@ func main() {
 		}()
 	}
 }
+
+//curl -X POST http://localhost:3000/jobs/17b5ef5e-bf86-4d64-a329-b4e76eba5c2b/cancel
