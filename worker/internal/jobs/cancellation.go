@@ -3,7 +3,7 @@ package jobs
 import (
 	"context"
 	"errors"
-
+	"log"
 	"transcoding-worker/internal/db"
 )
 
