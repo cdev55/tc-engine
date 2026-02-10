@@ -43,3 +43,29 @@ export async function cancelTranscodeJob(jobId: string) {
   await redis.publish("transcode:cancel", jobId);
   return updatedJob;
 }
+
+export async function addJobToQueue(jobId: string, outputSpec: any) {
+  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  if (!job) {
+    return null;
+  }
+
+  // Check if job is in UPLOADING status
+  if (job.status !== "UPLOADING") {
+    throw new Error(`Job ${jobId} is not in UPLOADING status. Current status: ${job.status}`);
+  }
+
+  // Update job with outputSpec and change status to QUEUED
+  const updatedJob = await prisma.job.update({
+    where: { id: jobId },
+    data: {
+      status: "QUEUED",
+      outputSpec,
+    },
+  });
+
+  // Add to transcode queue
+  await redis.lpush("transcode:queue", jobId);
+
+  return updatedJob;
+}

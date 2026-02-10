@@ -6,3 +6,10 @@ export const createJobSchema = z.object({
     format: z.enum(["mp4", "mkv"]),
   }),
 });
+
+export const addToQueueSchema = z.object({
+  jobId: z.string().uuid(),
+  outputSpec: z.object({
+    format: z.enum(["mp4", "mkv"]),
+  }),
+});

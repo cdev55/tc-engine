@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { createJobSchema } from "./job.validation";
-import { cancelTranscodeJob, createJob, getJob, retryTranscodeJob } from "./job.service";
+import { addToQueueSchema, createJobSchema } from "./job.validation";
+import { addJobToQueue, cancelTranscodeJob, createJob, getJob, retryTranscodeJob } from "./job.service";
 
 export async function createJobHandler(req: Request, res: Response) {
     const parsed = createJobSchema.safeParse(req.body);
@@ -44,4 +44,24 @@ export async function cancelTranscodeJobHandler(req: Request, res: Response) {
         return res.status(404).json({ error: "Job not found" });
     }
     res.json(job);
+}
+
+export async function addToQueueHandler(req: Request, res: Response) {
+    const parsed = addToQueueSchema.safeParse(req.body);
+    if (!parsed.success) {
+        return res.status(400).json(parsed.error);
+    }
+
+    try {
+        const job = await addJobToQueue(parsed.data.jobId, parsed.data.outputSpec);
+        if (!job) {
+            return res.status(404).json({ error: "Job not found" });
+        }
+        res.json(job);
+    } catch (error) {
+        if (error instanceof Error) {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: "Failed to add job to queue" });
+    }
 }
