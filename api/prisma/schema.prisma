@@ -15,6 +15,7 @@ model Job {
   id         String   @id @default(uuid())
   status     String
   inputUrl   String
+  outputUrl  String   @default("")
   outputSpec Json
   progress   Float    @default(0)
   retries    Int      @default(0)
