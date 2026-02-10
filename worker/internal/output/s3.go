@@ -69,3 +69,21 @@ func (u *S3Uploader) UploadDir(
 func awsString(s string) *string {
 	return &s
 }
+
+// GeneratePresignedURL generates a presigned URL for streaming the HLS master playlist
+func (u *S3Uploader) GeneratePresignedURL(ctx context.Context, key string, expiration time.Duration) (string, error) {
+	presignClient := s3.NewPresignClient(u.client)
+	
+	request, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: &u.bucket,
+		Key:    &key,
+	}, func(opts *s3.PresignOptions) {
+		opts.Expires = expiration
+	})
+	
+	if err != nil {
+		return "", err
+	}
+	
+	return request.URL, nil
+}
