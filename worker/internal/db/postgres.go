@@ -2,12 +2,7 @@ package db
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"time"
 
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -78,13 +73,13 @@ func (d *DB) GetJobStatus(ctx context.Context, jobID string) (string, error) {
 
 func (d *DB) MarkCancelled(ctx context.Context, jobID string) error {
 	// Generate presigned URL for the HLS master playlist
-	outputUrl, err := generateOutputPresignedURL(ctx, jobID)
-	if err != nil {
-		// Log error but don't fail the completion
-		fmt.Printf("Warning: Failed to generate output URL for job %s: %v\n", jobID, err)
-		outputUrl = "" // Set empty if generation fails
-	}
-	
+	// outputUrl, err := generateOutputPresignedURL(ctx, jobID)
+	// if err != nil {
+	// 	// Log error but don't fail the completion
+	// 	fmt.Printf("Warning: Failed to generate output URL for job %s: %v\n", jobID, err)
+	// 	outputUrl = "" // Set empty if generation fails
+	// }
+
 	_, err := d.Pool.Exec(ctx, `
 		UPDATE "Job"
 		SET status='CANCELLED',
@@ -96,33 +91,33 @@ func (d *DB) MarkCancelled(ctx context.Context, jobID string) error {
 }
 
 // generateOutputPresignedURL generates a presigned URL for the HLS master playlist
-func generateOutputPresignedURL(ctx context.Context, jobID string) (string, error) {
-	bucket := os.Getenv("OUTPUT_S3_BUCKET")
-	if bucket == "" {
-		return "", fmt.Errorf("OUTPUT_S3_BUCKET not set")
-	}
+// func generateOutputPresignedURL(ctx context.Context, jobID string) (string, error) {
+// 	bucket := os.Getenv("OUTPUT_S3_BUCKET")
+// 	if bucket == "" {
+// 		return "", fmt.Errorf("OUTPUT_S3_BUCKET not set")
+// 	}
 
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		return "", err
-	}
+// 	cfg, err := config.LoadDefaultConfig(ctx)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	s3Client := s3.NewFromConfig(cfg)
-	presignClient := s3.NewPresignClient(s3Client)
+// 	s3Client := s3.NewFromConfig(cfg)
+// 	presignClient := s3.NewPresignClient(s3Client)
 
-	// HLS master playlist location
-	key := fmt.Sprintf("outputs/%s/hls/master.m3u8", jobID)
+// 	// HLS master playlist location
+// 	key := fmt.Sprintf("outputs/%s/hls/master.m3u8", jobID)
 
-	request, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: &bucket,
-		Key:    &key,
-	}, func(opts *s3.PresignOptions) {
-		opts.Expires = 7 * 24 * time.Hour // 7 days
-	})
+// 	request, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
+// 		Bucket: &bucket,
+// 		Key:    &key,
+// 	}, func(opts *s3.PresignOptions) {
+// 		opts.Expires = 7 * 24 * time.Hour // 7 days
+// 	})
 
-	if err != nil {
-		return "", err
-	}
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	return request.URL, nil
-}
+// 	return request.URL, nil
+// }

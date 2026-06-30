@@ -23,6 +23,7 @@ coverage/
 *.temp
 .cache/
 node_modules
+dist/
 # Docker
 docker-compose.override.yml
 
