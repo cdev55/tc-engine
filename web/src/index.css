@@ -1,0 +1,259 @@
+/* ─── Reset & base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #22263a;
+  --border: #2e3350;
+  --text: #e4e8f0;
+  --text-muted: #7b84a0;
+  --accent: #5b6af0;
+  --accent-hover: #4757e8;
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --blue: #3b82f6;
+  --navy-blue:#03346E;
+  --radius: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,.35);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+body { min-height: 100vh; }
+
+/* ─── Layout ────────────────────────────────────────────────────────── */
+.app { max-width: 680px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+
+.app-header { text-align: center; margin-bottom: 2.5rem; }
+.app-header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -.5px; }
+.subtitle { color: var(--text-muted); margin-top: .35rem; font-size: .9rem; }
+
+.app-main { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* ─── Card surface ──────────────────────────────────────────────────── */
+.input-section, .job-status-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+/* ─── Tabs ──────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+
+.tab {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: .9rem;
+  padding: .6rem 1.1rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .15s, border-color .15s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ─── Forms ─────────────────────────────────────────────────────────── */
+.submit-form { display: flex; flex-direction: column; gap: 1rem; }
+
+.form-group { display: flex; flex-direction: column; gap: .4rem; }
+.form-group label { font-size: .8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+
+input[type="text"], select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: .95rem;
+  padding: .55rem .8rem;
+  outline: none;
+  width: 100%;
+  transition: border-color .15s;
+}
+input[type="text"]:focus, select:focus { border-color: var(--accent); }
+input[type="text"]::placeholder { color: var(--text-muted); }
+select option { background: var(--surface2); }
+
+/* ─── Buttons ───────────────────────────────────────────────────────── */
+.btn {
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: .9rem;
+  font-weight: 600;
+  padding: .6rem 1.2rem;
+  transition: background .15s, opacity .15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+}
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-primary { background: var(--navy-blue); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+
+.btn-ghost { background: transparent; color: var(--text-muted); }
+.btn-ghost:hover:not(:disabled) { color: var(--text); }
+
+/* ─── Spinner ───────────────────────────────────────────────────────── */
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Dropzone ──────────────────────────────────────────────────────── */
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.dropzone:hover, .dropzone.has-file { border-color: var(--accent); background: rgba(91,106,240,.05); }
+
+.dropzone-hint { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
+.dropzone-icon { font-size: 1.6rem; }
+.dropzone-hint p { color: var(--text-muted); font-size: .9rem; }
+.dropzone-types { font-size: .8rem !important; }
+
+.file-info {
+  display: flex; flex-direction: column; align-items: center; gap: .3rem;
+}
+.file-name { font-weight: 600; word-break: break-all; }
+.file-size { color: var(--text-muted); font-size: .85rem; }
+.remove-btn {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text-muted); cursor: pointer; font-size: .8rem; padding: .2rem .6rem;
+  margin-top: .2rem;
+}
+.remove-btn:hover { color: var(--red); border-color: var(--red); }
+
+/* ─── Upload step indicator ─────────────────────────────────────────── */
+.upload-steps { display: flex; flex-direction: column; gap: .3rem; }
+.upload-step-label { font-size: .85rem; color: var(--text-muted); }
+
+/* ─── Progress bar ──────────────────────────────────────────────────── */
+.progress-bar-track {
+  background: var(--surface2);
+  border-radius: 99px;
+  height: 6px;
+  overflow: hidden;
+  width: 100%;
+}
+.progress-bar-fill {
+  background: var(--accent);
+  border-radius: 99px;
+  height: 100%;
+  transition: width .3s ease;
+}
+.progress-bar-fill.indeterminate {
+  width: 40%;
+  animation: slide 1.2s ease-in-out infinite;
+}
+@keyframes slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+/* ─── Job status card ───────────────────────────────────────────────── */
+.job-status-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+.job-status-header h2 { font-size: 1.05rem; font-weight: 600; }
+
+.status-badge {
+  font-size: .75rem; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; padding: .2rem .65rem; border-radius: 99px;
+}
+.status-uploading   { background: rgba(59,130,246,.2); color: var(--blue); }
+.status-created,
+.status-queued      { background: rgba(245,158,11,.15); color: var(--amber); }
+.status-running     { background: rgba(91,106,240,.2); color: #818cf8; }
+.status-completed   { background: rgba(34,197,94,.15); color: var(--green); }
+.status-failed      { background: rgba(239,68,68,.15); color: var(--red); }
+.status-cancel-requested,
+.status-cancelled   { background: rgba(123,132,160,.15); color: var(--text-muted); }
+
+.job-field {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: .5rem;
+  align-items: center;
+  padding: .45rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.job-field:last-of-type { border-bottom: none; }
+
+.field-label { font-size: .8rem; color: var(--text-muted); }
+.field-value { font-size: .88rem; display: flex; align-items: center; gap: .4rem; }
+.field-value.mono { font-family: "SF Mono", "Fira Code", monospace; font-size: .82rem; }
+
+.progress-wrap { flex-direction: column; align-items: flex-start; gap: .35rem; width: 100%; }
+.progress-pct { font-size: .8rem; color: var(--text-muted); }
+
+.url-truncate {
+  display: block; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; max-width: 100%; color: var(--text-muted); font-size: .82rem;
+}
+
+.copy-btn {
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  font-size: .9rem; padding: 0 2px; line-height: 1;
+}
+.copy-btn:hover { color: var(--accent); }
+
+.job-error {
+  margin-top: .75rem;
+  background: rgba(239,68,68,.1);
+  border: 1px solid rgba(239,68,68,.3);
+  border-radius: 6px;
+  color: var(--red);
+  font-size: .85rem;
+  padding: .6rem .9rem;
+}
+
+.job-actions { display: flex; gap: .75rem; margin-top: 1.1rem; }
+
+.inline-error {
+  background: rgba(239,68,68,.1);
+  border: 1px solid rgba(239,68,68,.3);
+  border-radius: 6px;
+  color: var(--red);
+  font-size: .85rem;
+  padding: .55rem .8rem;
+}
+.polling-error { margin-bottom: .5rem; }
+
+.new-job-btn { margin-top: .5rem; padding-left: 0; }
+
+/* ─── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 520px) {
+  .job-field { grid-template-columns: 1fr; }
+  .field-label { margin-bottom: -.2rem; }
+}
