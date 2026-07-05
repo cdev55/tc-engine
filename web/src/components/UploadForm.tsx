@@ -1,18 +1,22 @@
 import { useRef, useState } from "react";
-import { addJobToQueue, getPresignedUploadUrl, uploadFileToS3 } from "../api/client";
 import type { Job, OutputFormat } from "../types/job";
-
+import {
+  createJobUpload,
+  presignParts,
+  uploadPartToS3,
+  completeUpload,
+} from "../api/client";
 interface UploadFormProps {
   onJobCreated: (job: Job) => void;
 }
 
-type Step = "idle" | "presign" | "upload" | "queue" | "done";
+type Step = "idle" | "initiate" | "upload" | "complete" | "done";
 
 const STEP_LABELS: Record<Step, string> = {
   idle: "",
-  presign: "Requesting upload URL…",
+  initiate: "Preparing upload…",
   upload: "Uploading to storage…",
-  queue: "Starting transcode…",
+  complete: "Queuing for transcode…",
   done: "Done",
 };
 
@@ -26,32 +30,61 @@ export function UploadForm({ onJobCreated }: UploadFormProps) {
 
   const loading = step !== "idle" && step !== "done";
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!file) return;
-    setError(null);
-    setUploadPct(0);
+  const BATCH_SIZE = 50;
 
-    try {
-      setStep("presign");
-      const { jobId, uploadUrl } = await getPresignedUploadUrl(
-        file.name,
-        file.type || "video/mp4"
+const submit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!file) return;
+  setError(null);
+  setUploadPct(0);
+
+  try {
+    // 1. Create job in DB + initiate multipart upload — returns jobId tied to S3 folder
+    setStep("initiate");
+    const { jobId, uploadId, key, chunkSize, totalParts } = await createJobUpload(
+      file.name,
+      file.type || "video/mp4",
+      file.size,
+      format
+    );
+
+    // 2. Presign and upload in batches of 50 parts
+    setStep("upload");
+    const allParts: { partNumber: number; etag: string }[] = [];
+    let completedParts = 0;
+
+    for (let batchStart = 1; batchStart <= totalParts; batchStart += BATCH_SIZE) {
+      const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, totalParts);
+      const partNumbers = Array.from(
+        { length: batchEnd - batchStart + 1 },
+        (_, i) => batchStart + i
       );
 
-      setStep("upload");
-      await uploadFileToS3(uploadUrl, file, setUploadPct);
+      const { parts: presignedBatch } = await presignParts(uploadId, key, partNumbers);
 
-      setStep("queue");
-      const job = await addJobToQueue(jobId, format);
+      for (const { partNumber, url } of presignedBatch) {
+        const start = (partNumber - 1) * chunkSize;
+        const chunk = file.slice(start, start + chunkSize);
 
-      setStep("done");
-      onJobCreated(job);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-      setStep("idle");
+        const etag = await uploadPartToS3(url, chunk);
+        allParts.push({ partNumber, etag });
+
+        completedParts++;
+        setUploadPct(Math.round((completedParts / totalParts) * 100));
+      }
     }
-  };
+
+    // 3. Complete upload — server sets inputUrl + queues job for transcoding
+    setStep("complete");
+    const job = await completeUpload(jobId, uploadId, key, totalParts, allParts);
+
+    setStep("done");
+    onJobCreated(job);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Upload failed");
+    setStep("idle");
+  }
+};
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();

@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"time"
 
-	// "fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -40,11 +39,13 @@ func (u *S3Uploader) UploadFile(
 	}
 	defer file.Close()
 
+	ct := contentTypeForKey(s3Key)
+
 	_, err = u.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:      &u.bucket,
 		Key:         &s3Key,
 		Body:        file,
-		ContentType: awsString("video/mp4"),
+		ContentType: &ct,
 	})
 
 	return err
@@ -67,11 +68,7 @@ func (u *S3Uploader) UploadDir(
 	})
 }
 
-func awsString(s string) *string {
-	return &s
-}
-
-// GeneratePresignedURL generates a presigned URL for streaming the HLS master playlist
+// GeneratePresignedURL generates a presigned GET URL for a given S3 key.
 func (u *S3Uploader) GeneratePresignedURL(ctx context.Context, key string, expiration time.Duration) (string, error) {
 	presignClient := s3.NewPresignClient(u.client)
 
@@ -87,4 +84,17 @@ func (u *S3Uploader) GeneratePresignedURL(ctx context.Context, key string, expir
 	}
 
 	return request.URL, nil
+}
+
+func contentTypeForKey(key string) string {
+	switch filepath.Ext(key) {
+	case ".m3u8":
+		return "application/vnd.apple.mpegurl"
+	case ".ts":
+		return "video/mp2t"
+	case ".mp4":
+		return "video/mp4"
+	default:
+		return "application/octet-stream"
+	}
 }

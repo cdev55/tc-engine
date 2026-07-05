@@ -13,7 +13,7 @@ func Execute(ctx context.Context, jobID string, q *queue.RedisQueue, database *d
 	}
 	defer env.Cleanup()
 
-	if err := downloadInput(ctx, env); err != nil {
+	if err := downloadInput(ctx, env, database); err != nil {
 		return err
 	}
 

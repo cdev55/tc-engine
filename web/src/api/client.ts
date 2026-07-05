@@ -1,6 +1,6 @@
 import type { Job, OutputFormat } from "../types/job";
 
-const BASE = "/api";
+const BASE = "http://localhost:3000";
 
 interface ApiError {
   message?: string;
@@ -35,6 +35,53 @@ export function createJobFromUrl(
     method: "POST",
     body: JSON.stringify({ inputUrl, outputSpec: { format } }),
   });
+}
+
+// Creates a job (UPLOADING) and initiates a multipart upload in one request.
+// outputUrl is predetermined on the server to s3://{bucket}/{jobId}/hls/master.m3u8
+export function createJobUpload(
+  fileName: string,
+  fileType: string,
+  fileSize: number,
+  outputFormat: string
+): Promise<{ jobId: string; uploadId: string; key: string; chunkSize: number; totalParts: number }> {
+  return request("/uploads/create-job", {
+    method: "POST",
+    body: JSON.stringify({ fileName, fileType, fileSize, outputFormat }),
+  });
+}
+
+export function presignParts(
+  uploadId: string,
+  key: string,
+  partNumbers: number[]
+): Promise<{ parts: { partNumber: number; url: string }[] }> {
+  return request("/uploads/parts/presign", {
+    method: "POST",
+    body: JSON.stringify({ uploadId, key, partNumbers }),
+  });
+}
+
+// Completes the multipart upload; server sets inputUrl + queues the job for transcoding.
+export function completeUpload(
+  jobId: string,
+  uploadId: string,
+  key: string,
+  totalParts: number,
+  parts: { partNumber: number; etag: string }[]
+): Promise<Job> {
+  return request<Job>("/uploads/complete", {
+    method: "POST",
+    body: JSON.stringify({ jobId, uploadId, key, totalParts, parts }),
+  });
+}
+
+export async function uploadPartToS3(url: string, chunk: Blob): Promise<string> {
+  const res = await fetch(url, { method: "PUT", body: chunk });
+  if (!res.ok) throw new Error(`Part upload failed: HTTP ${res.status}`);
+  const etag = res.headers.get("ETag");
+  if (!etag) throw new Error("S3 did not return an ETag for this part");
+  return etag;
 }
 
 export function getPresignedUploadUrl(
@@ -82,6 +129,11 @@ export function addJobToQueue(
 
 export function getJob(id: string): Promise<Job> {
   return request<Job>(`/jobs/${id}`);
+}
+
+// Only succeeds when job status is COMPLETED; returns 403 otherwise
+export function getStreamUrl(id: string): Promise<{ streamUrl: string }> {
+  return request<{ streamUrl: string }>(`/jobs/${id}/stream-url`);
 }
 
 export function cancelJob(id: string): Promise<Job> {

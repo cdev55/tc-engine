@@ -10,6 +10,7 @@ type Config struct {
 	RedisURL           string
 	DatabaseURL        string
 	WorkerID           string
+	S3Bucket           string
 	AwsAccessKeysId    string
 	AwsSecretAccessKey string
 	AwsRegion          string
@@ -26,6 +27,7 @@ func Load() Config {
 		RedisURL:           os.Getenv("REDIS_URL"),
 		DatabaseURL:        os.Getenv("DATABASE_URL"),
 		WorkerID:           os.Getenv("WORKER_ID"),
+		S3Bucket:           os.Getenv("S3_BUCKET"),
 		AwsAccessKeysId:    os.Getenv("AWS_ACCESS_KEYS_ID"),
 		AwsSecretAccessKey: os.Getenv("AWS_SECRET_ACCESS_KEY"),
 		AwsRegion:          os.Getenv("AWS_REGION"),

@@ -3,12 +3,18 @@ package jobs
 import (
 	"context"
 	"fmt"
+	"transcoding-worker/internal/db"
 	"transcoding-worker/internal/input"
 )
 
-func downloadInput(ctx context.Context, env *ExecEnv) error {
-	// jobInputURL := getInputURLFromDBLater() // placeholder
-	jobInputURL := "https://cdn-dqs.mogiio.com/dev/mogiDocs/20a01a2026a12a31a43fileexampleMP448015MG.mp4"
+func downloadInput(ctx context.Context, env *ExecEnv, database *db.DB) error {
+	inputURL, err := database.GetJobInputURL(ctx, env.JobID)
+	if err != nil {
+		return fmt.Errorf("failed to fetch input URL for job %s: %w", env.JobID, err)
+	}
+	if inputURL == "" {
+		return fmt.Errorf("job %s has no input URL", env.JobID)
+	}
 
 	resolvers := []input.Resolver{
 		&input.HTTPResolver{},
@@ -20,10 +26,10 @@ func downloadInput(ctx context.Context, env *ExecEnv) error {
 	}
 
 	for _, r := range resolvers {
-		if r.CanHandle(jobInputURL) {
-			return r.Download(ctx, jobInputURL, env.InputPath)
+		if r.CanHandle(inputURL) {
+			return r.Download(ctx, inputURL, env.InputPath)
 		}
 	}
 
-	return fmt.Errorf("no resolver for input: %s", jobInputURL)
+	return fmt.Errorf("no resolver for input: %s", inputURL)
 }

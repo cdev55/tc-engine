@@ -71,53 +71,20 @@ func (d *DB) GetJobStatus(ctx context.Context, jobID string) (string, error) {
 	return status, err
 }
 
-func (d *DB) MarkCancelled(ctx context.Context, jobID string) error {
-	// Generate presigned URL for the HLS master playlist
-	// outputUrl, err := generateOutputPresignedURL(ctx, jobID)
-	// if err != nil {
-	// 	// Log error but don't fail the completion
-	// 	fmt.Printf("Warning: Failed to generate output URL for job %s: %v\n", jobID, err)
-	// 	outputUrl = "" // Set empty if generation fails
-	// }
+func (d *DB) GetJobInputURL(ctx context.Context, jobID string) (string, error) {
+	var inputURL string
+	err := d.Pool.QueryRow(ctx, `
+		SELECT "inputUrl" FROM "Job" WHERE id=$1
+	`, jobID).Scan(&inputURL)
+	return inputURL, err
+}
 
+func (d *DB) MarkCancelled(ctx context.Context, jobID string) error {
 	_, err := d.Pool.Exec(ctx, `
 		UPDATE "Job"
-		SET status='CANCELLED',
-		    cancelled_at=now(),
-		    "updatedAt"=now()
+		SET status='CANCELLED', "updatedAt"=now()
 		WHERE id=$1
-	`)
+	`, jobID)
 	return err
 }
 
-// generateOutputPresignedURL generates a presigned URL for the HLS master playlist
-// func generateOutputPresignedURL(ctx context.Context, jobID string) (string, error) {
-// 	bucket := os.Getenv("OUTPUT_S3_BUCKET")
-// 	if bucket == "" {
-// 		return "", fmt.Errorf("OUTPUT_S3_BUCKET not set")
-// 	}
-
-// 	cfg, err := config.LoadDefaultConfig(ctx)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	s3Client := s3.NewFromConfig(cfg)
-// 	presignClient := s3.NewPresignClient(s3Client)
-
-// 	// HLS master playlist location
-// 	key := fmt.Sprintf("outputs/%s/hls/master.m3u8", jobID)
-
-// 	request, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
-// 		Bucket: &bucket,
-// 		Key:    &key,
-// 	}, func(opts *s3.PresignOptions) {
-// 		opts.Expires = 7 * 24 * time.Hour // 7 days
-// 	})
-
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return request.URL, nil
-// }

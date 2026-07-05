@@ -8,30 +8,21 @@ import (
 	"transcoding-worker/internal/output"
 )
 
-func uploadMP4(ctx context.Context, env *ExecEnv) error {
-	uploader, err := newUploader(ctx)
-	if err != nil {
-		return err
-	}
-
-	key := fmt.Sprintf("outputs/%s/mp4/output.mp4", env.JobID)
-	return uploader.UploadFile(ctx, env.MP4Path, key)
-}
-
 func uploadHLS(ctx context.Context, env *ExecEnv) error {
 	uploader, err := newUploader(ctx)
 	if err != nil {
 		return err
 	}
 
-	prefix := fmt.Sprintf("outputs/%s/hls", env.JobID)
+	// Output layout: {jobId}/hls/ — matches the predetermined outputUrl set at job creation
+	prefix := fmt.Sprintf("%s/hls", env.JobID)
 	return uploader.UploadDir(ctx, env.HLSDir, prefix)
 }
 
 func newUploader(ctx context.Context) (*output.S3Uploader, error) {
-	bucket := os.Getenv("OUTPUT_S3_BUCKET")
+	bucket := os.Getenv("S3_BUCKET")
 	if bucket == "" {
-		return nil, fmt.Errorf("OUTPUT_S3_BUCKET not set")
+		return nil, fmt.Errorf("S3_BUCKET not set")
 	}
 	return output.NewS3Uploader(ctx, bucket)
 }

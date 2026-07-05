@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { cancelJob, retryJob } from "../api/client";
+import { useEffect, useState } from "react";
+import { cancelJob, getStreamUrl, retryJob } from "../api/client";
 import type { Job } from "../types/job";
 import { STATUS_LABELS } from "../types/job";
 import { ProgressBar } from "./ProgressBar";
@@ -30,6 +30,14 @@ function CopyButton({ text }: { text: string }) {
 export function JobStatus({ job, onUpdate }: JobStatusProps) {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (job.status !== "COMPLETED") return;
+    getStreamUrl(job.id)
+      .then(({ streamUrl }) => setStreamUrl(streamUrl))
+      .catch(() => setStreamUrl(null));
+  }, [job.id, job.status]);
 
   const runAction = async (fn: () => Promise<Job>) => {
     setActionLoading(true);
@@ -86,13 +94,17 @@ export function JobStatus({ job, onUpdate }: JobStatusProps) {
         </span>
       </div>
 
-      {job.outputUrl && (
+      {job.status === "COMPLETED" && (
         <div className="job-field">
-          <span className="field-label">Output</span>
+          <span className="field-label">Stream</span>
           <span className="field-value">
-            <a href={job.outputUrl} target="_blank" rel="noreferrer">
-              Open output ↗
-            </a>
+            {streamUrl ? (
+              <a href={streamUrl} target="_blank" rel="noreferrer">
+                Open HLS stream ↗
+              </a>
+            ) : (
+              <span className="field-muted">Resolving stream URL…</span>
+            )}
           </span>
         </div>
       )}
