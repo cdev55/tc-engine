@@ -7,4 +7,5 @@ export const env = {
   s3Bucket: process.env.S3_BUCKET!,
   s3Region: process.env.AWS_REGION || "ap-south-1",
   presignBatchSize: Number(process.env.PRESIGN_BATCH_SIZE || 50),
+  cloudfrontDomain: process.env.CLOUDFRONT_DOMAIN!,
 };

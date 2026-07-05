@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { addToQueueSchema, createJobSchema } from "./job.validation";
-import { addJobToQueue, cancelTranscodeJob, createJob, getJob, retryTranscodeJob } from "./job.service";
+import { addJobToQueue, cancelTranscodeJob, createJob, getJob, getStreamUrl, retryTranscodeJob } from "./job.service";
 
 export async function createJobHandler(req: Request, res: Response) {
     const parsed = createJobSchema.safeParse(req.body);
@@ -44,6 +44,25 @@ export async function cancelTranscodeJobHandler(req: Request, res: Response) {
         return res.status(404).json({ error: "Job not found" });
     }
     res.json(job);
+}
+
+export async function getStreamUrlHandler(req: Request, res: Response) {
+  const jobId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+
+  try {
+    const streamUrl = await getStreamUrl(jobId);
+    res.json({ streamUrl });
+  } catch (error) {
+    if (error instanceof Error) {
+      const code = (error as any).code;
+      if (code === "NOT_FOUND") return res.status(404).json({ error: error.message });
+      if (code === "NOT_READY") {
+        return res.status(403).json({ error: error.message, status: (error as any).status });
+      }
+    }
+    console.error("Error resolving stream URL:", error);
+    res.status(500).json({ error: "Failed to resolve stream URL" });
+  }
 }
 
 export async function addToQueueHandler(req: Request, res: Response) {

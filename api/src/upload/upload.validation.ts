@@ -12,10 +12,12 @@ export const uploadVideoSchema = z.object({
   contentType: z.string().optional().default("video/mp4"),
 });
 
-export const initiateUploadSchema = z.object({
+// Single entry point: creates job + initiates multipart upload in one request
+export const createJobUploadSchema = z.object({
   fileName: z.string().min(1, "fileName is required"),
   fileType: z.string().min(1, "fileType is required"),
   fileSize: positiveInt("fileSize"),
+  outputFormat: z.enum(["mp4", "mkv"]),
 });
 
 export const presignPartsSchema = z.object({
@@ -33,6 +35,7 @@ const uploadedPartSchema = z.object({
 
 export const completeUploadSchema = z
   .object({
+    jobId: z.string().uuid("jobId must be a valid UUID"),
     uploadId: z.string().min(1, "uploadId is required"),
     key: z.string().min(1, "key is required"),
     totalParts: positiveInt("totalParts"),
@@ -67,4 +70,3 @@ export const completeUploadSchema = z
       }
     }
   });
-

@@ -7,7 +7,6 @@ import {
   CompleteMultipartUploadCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { randomUUID } from "crypto";
 import { env } from "../config/env";
 
 const s3Client = new S3Client({
@@ -73,9 +72,9 @@ export interface PresignPartsResult {
   parts: PresignedPart[];
 }
 
-function buildObjectKey(fileName: string): string {
+function buildObjectKey(jobId: string, fileName: string): string {
   const ext = fileName.split(".").pop() || "mp4";
-  return `videos/${randomUUID()}/original.${ext}`;
+  return `${jobId}/raw/original.${ext}`;
 }
 
 async function createMultipartUpload(key: string, contentType: string): Promise<string> {
@@ -115,11 +114,12 @@ async function presignPartUrl(key: string, uploadId: string, partNumber: number)
 }
 
 export async function initiateMultipartUpload(
+  jobId: string,
   fileName: string,
   fileType: string,
   fileSize: number
 ): Promise<InitiateUploadResult> {
-  const key = buildObjectKey(fileName);
+  const key = buildObjectKey(jobId, fileName);
   const chunkSize = getChunkSize(fileSize);
   const totalParts = Math.ceil(fileSize / chunkSize);
 
