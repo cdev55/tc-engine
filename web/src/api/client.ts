@@ -127,6 +127,10 @@ export function addJobToQueue(
   });
 }
 
+export function listJobs(limit = 50): Promise<Job[]> {
+  return request<Job[]>(`/jobs?limit=${limit}`);
+}
+
 export function getJob(id: string): Promise<Job> {
   return request<Job>(`/jobs/${id}`);
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { cancelJob, getStreamUrl, retryJob } from "../api/client";
 import type { Job } from "../types/job";
 import { STATUS_LABELS } from "../types/job";
@@ -99,9 +100,9 @@ export function JobStatus({ job, onUpdate }: JobStatusProps) {
           <span className="field-label">Stream</span>
           <span className="field-value">
             {streamUrl ? (
-              <a href={streamUrl} target="_blank" rel="noreferrer">
-                Open HLS stream ↗
-              </a>
+              <Link to={`/watch/${job.id}`} className="stream-link">
+                Watch stream →
+              </Link>
             ) : (
               <span className="field-muted">Resolving stream URL…</span>
             )}

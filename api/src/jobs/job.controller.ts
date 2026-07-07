@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { addToQueueSchema, createJobSchema } from "./job.validation";
-import { addJobToQueue, cancelTranscodeJob, createJob, getJob, getStreamUrl, retryTranscodeJob } from "./job.service";
+import { addJobToQueue, cancelTranscodeJob, createJob, getJob, getStreamUrl, listJobs, retryTranscodeJob } from "./job.service";
 
 export async function createJobHandler(req: Request, res: Response) {
     const parsed = createJobSchema.safeParse(req.body);
@@ -14,6 +14,22 @@ export async function createJobHandler(req: Request, res: Response) {
     );
 
     res.status(201).json(job);
+}
+
+export async function listJobsHandler(req: Request, res: Response) {
+  const rawLimit = req.query.limit;
+  const limit =
+    typeof rawLimit === "string" && /^\d+$/.test(rawLimit)
+      ? Math.min(parseInt(rawLimit, 10), 100)
+      : 50;
+
+  try {
+    const jobs = await listJobs(limit);
+    res.json(jobs);
+  } catch (error) {
+    console.error("Error listing jobs:", error);
+    res.status(500).json({ error: "Failed to list jobs" });
+  }
 }
 
 export async function getJobHandler(req: Request, res: Response) {

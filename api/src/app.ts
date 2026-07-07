@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { addToQueueHandler, cancelTranscodeJobHandler, createJobHandler, getJobHandler, getStreamUrlHandler, retryTranscodeJobHandler } from "./jobs/job.controller";
+import { addToQueueHandler, cancelTranscodeJobHandler, createJobHandler, getJobHandler, getStreamUrlHandler, listJobsHandler, retryTranscodeJobHandler } from "./jobs/job.controller";
 import { completeUploadHandler, createJobUploadHandler, presignPartsHandler, uploadVideoHandler } from "./upload/upload.controller";
 
 export const app = express();
@@ -9,6 +9,7 @@ app.use(express.json());
 
 // Job routes
 app.post("/jobs", createJobHandler);
+app.get("/jobs", listJobsHandler);
 app.get("/jobs/:id", getJobHandler);
 app.get("/jobs/:id/stream-url", getStreamUrlHandler);
 app.put("/jobs/:id", retryTranscodeJobHandler);

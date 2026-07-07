@@ -25,6 +25,13 @@ export async function getJob(jobId: string) {
   return prisma.job.findUnique({ where: { id: jobId } });
 }
 
+export async function listJobs(limit = 50) {
+  return prisma.job.findMany({
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+}
+
 export async function retryTranscodeJob(jobId: string) {
   const updatedJob = await prisma.job.update({
     where: { id: jobId },
