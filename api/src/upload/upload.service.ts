@@ -1,5 +1,4 @@
 import {
-  S3Client,
   PutObjectCommand,
   CreateMultipartUploadCommand,
   UploadPartCommand,
@@ -7,11 +6,8 @@ import {
   CompleteMultipartUploadCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { s3Client } from "../config/s3";
 import { env } from "../config/env";
-
-const s3Client = new S3Client({
-  region: env.s3Region,
-});
 
 export async function generateVideoUploadUrl(
   jobId: string,

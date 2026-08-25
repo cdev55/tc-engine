@@ -24,6 +24,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       body.message ?? body.error ?? `HTTP ${res.status} ${res.statusText}`;
     throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
   }
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
@@ -138,6 +139,10 @@ export function getJob(id: string): Promise<Job> {
 // Only succeeds when job status is COMPLETED; returns 403 otherwise
 export function getStreamUrl(id: string): Promise<{ streamUrl: string }> {
   return request<{ streamUrl: string }>(`/jobs/${id}/stream-url`);
+}
+
+export function deleteJob(id: string): Promise<void> {
+  return request<void>(`/jobs/${id}`, { method: "DELETE" });
 }
 
 export function cancelJob(id: string): Promise<Job> {

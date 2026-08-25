@@ -21,7 +21,10 @@ export function PlayerPage() {
     setStreamUrl(null);
 
     getStreamUrl(jobId)
-      .then(({ streamUrl }) => setStreamUrl(streamUrl))
+      .then(({ streamUrl }) => {
+        setStreamUrl(streamUrl);
+        console.log("streamUrl", streamUrl);
+      })
       .catch((e) =>
         setError(e instanceof Error ? e.message : "Failed to load stream")
       )

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { deleteJob } from "../api/client";
 import { JobList } from "../components/JobList";
 import { JobStatus } from "../components/JobStatus";
 import { UploadForm } from "../components/UploadForm";
@@ -28,6 +29,12 @@ export function HomePage() {
 
   const handleDismissDetail = () => {
     setSelectedJobId(null);
+  };
+
+  const handleDeleteJob = async (j: Job) => {
+    await deleteJob(j.id);
+    if (selectedJobId === j.id) setSelectedJobId(null);
+    await refresh();
   };
 
   return (
@@ -69,6 +76,7 @@ export function HomePage() {
           error={error}
           selectedJobId={selectedJobId}
           onSelectJob={handleSelectJob}
+          onDeleteJob={handleDeleteJob}
         />
 
         {job && selectedJobId && (

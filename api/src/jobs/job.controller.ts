@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { addToQueueSchema, createJobSchema } from "./job.validation";
-import { addJobToQueue, cancelTranscodeJob, createJob, getJob, getStreamUrl, listJobs, retryTranscodeJob } from "./job.service";
+import { addJobToQueue, cancelTranscodeJob, createJob, deleteJob, getJob, getStreamUrl, listJobs, retryTranscodeJob } from "./job.service";
 
 export async function createJobHandler(req: Request, res: Response) {
     const parsed = createJobSchema.safeParse(req.body);
@@ -78,6 +78,23 @@ export async function getStreamUrlHandler(req: Request, res: Response) {
     }
     console.error("Error resolving stream URL:", error);
     res.status(500).json({ error: "Failed to resolve stream URL" });
+  }
+}
+
+export async function deleteJobHandler(req: Request, res: Response) {
+  const jobId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+
+  try {
+    await deleteJob(jobId);
+    res.status(204).send();
+  } catch (error) {
+    if (error instanceof Error) {
+      const code = (error as { code?: string }).code;
+      if (code === "NOT_FOUND") return res.status(404).json({ error: error.message });
+      if (code === "CONFLICT") return res.status(409).json({ error: error.message });
+    }
+    console.error("Error deleting job:", error);
+    res.status(500).json({ error: "Failed to delete job" });
   }
 }
 

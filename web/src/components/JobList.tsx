@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Job } from "../types/job";
 import { STATUS_LABELS } from "../types/job";
@@ -9,6 +10,7 @@ interface JobListProps {
   error: string | null;
   selectedJobId: string | null;
   onSelectJob: (job: Job) => void;
+  onDeleteJob: (job: Job) => Promise<void>;
 }
 
 function formatDate(iso: string) {
@@ -20,13 +22,36 @@ function truncate(str: string, max = 40) {
   return `${str.slice(0, max)}…`;
 }
 
+const NON_DELETABLE_STATUSES = new Set(["RUNNING", "CANCELLED_REQUESTED"]);
+
 export function JobList({
   jobs,
   loading,
   error,
   selectedJobId,
   onSelectJob,
+  onDeleteJob,
 }: JobListProps) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDelete = async (job: Job) => {
+    const confirmed = window.confirm(
+      `Delete job ${job.id.slice(0, 8)}…?\n\nThis permanently removes the job and all associated files from storage.`
+    );
+    if (!confirmed) return;
+
+    setDeletingId(job.id);
+    setDeleteError(null);
+    try {
+      await onDeleteJob(job);
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Failed to delete job");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <section className="jobs-section">
       <div className="jobs-section-header">
@@ -37,6 +62,7 @@ export function JobList({
       </div>
 
       {error && <div className="inline-error">{error}</div>}
+      {deleteError && <div className="inline-error">{deleteError}</div>}
 
       {loading && jobs.length === 0 ? (
         <div className="jobs-empty">
@@ -66,6 +92,8 @@ export function JobList({
                 const isIndeterminate =
                   job.status === "CANCEL_REQUESTED" || job.status === "UPLOADING";
                 const isSelected = job.id === selectedJobId;
+                const isDeleting = deletingId === job.id;
+                const canDelete = !NON_DELETABLE_STATUSES.has(job.status);
 
                 return (
                   <tr
@@ -94,19 +122,34 @@ export function JobList({
                     </td>
                     <td className="jobs-date-cell">{formatDate(job.createdAt)}</td>
                     <td className="jobs-actions-cell" onClick={(e) => e.stopPropagation()}>
-                      {job.status === "COMPLETED" ? (
-                        <Link to={`/watch/${job.id}`} className="stream-link">
-                          Watch
-                        </Link>
-                      ) : (
+                      <div className="jobs-actions">
+                        {job.status === "COMPLETED" ? (
+                          <Link to={`/watch/${job.id}`} className="stream-link">
+                            Watch
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn-link"
+                            onClick={() => onSelectJob(job)}
+                          >
+                            Details
+                          </button>
+                        )}
                         <button
                           type="button"
-                          className="btn-link"
-                          onClick={() => onSelectJob(job)}
+                          className="btn-delete"
+                          disabled={!canDelete || isDeleting}
+                          title={
+                            canDelete
+                              ? "Delete job and storage"
+                              : "Cancel the job before deleting"
+                          }
+                          onClick={() => handleDelete(job)}
                         >
-                          Details
+                          {isDeleting ? "…" : "Delete"}
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 );

@@ -1,6 +1,7 @@
 import { prisma } from "../config/db";
 import { redis } from "../config/redis";
 import { env } from "../config/env";
+import { deleteJobStorage } from "../storage/s3";
 
 export async function createJob(inputUrl: string, outputSpec: any) {
   const job = await prisma.job.create({
@@ -126,4 +127,24 @@ export async function addJobToQueue(jobId: string, outputSpec: any) {
   await redis.lpush("transcode:queue", jobId);
 
   return updatedJob;
+}
+
+const NON_DELETABLE_STATUSES = new Set(["RUNNING", "CANCELLED_REQUESTED"]);
+
+export async function deleteJob(jobId: string): Promise<void> {
+  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  if (!job) {
+    throw Object.assign(new Error("Job not found"), { code: "NOT_FOUND" });
+  }
+
+  if (NON_DELETABLE_STATUSES.has(job.status)) {
+    throw Object.assign(
+      new Error("Cannot delete a job while it is running. Cancel it first."),
+      { code: "CONFLICT" }
+    );
+  }
+
+  await redis.lrem("transcode:queue", 0, jobId);
+  await deleteJobStorage(jobId, job.inputUrl);
+  await prisma.job.delete({ where: { id: jobId } });
 }

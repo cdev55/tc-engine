@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { addToQueueHandler, cancelTranscodeJobHandler, createJobHandler, getJobHandler, getStreamUrlHandler, listJobsHandler, retryTranscodeJobHandler } from "./jobs/job.controller";
+import { addToQueueHandler, cancelTranscodeJobHandler, createJobHandler, deleteJobHandler, getJobHandler, getStreamUrlHandler, listJobsHandler, retryTranscodeJobHandler } from "./jobs/job.controller";
 import { completeUploadHandler, createJobUploadHandler, presignPartsHandler, uploadVideoHandler } from "./upload/upload.controller";
 
 export const app = express();
@@ -14,6 +14,7 @@ app.get("/jobs/:id", getJobHandler);
 app.get("/jobs/:id/stream-url", getStreamUrlHandler);
 app.put("/jobs/:id", retryTranscodeJobHandler);
 app.post("/jobs/:id/cancel", cancelTranscodeJobHandler);
+app.delete("/jobs/:id", deleteJobHandler);
 app.post("/jobs/addToQueue", addToQueueHandler);
 
 // Upload routes
